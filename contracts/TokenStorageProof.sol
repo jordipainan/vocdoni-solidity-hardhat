@@ -2,12 +2,12 @@
 pragma solidity ^0.7.1;
 
 import "./RLP.sol";
-import "./lib.sol";
-import "./common.sol";
+import "./TrieProof.sol";
+import "./ContractSupport.sol";
 import "./IERC20.sol";
 
-contract TokenStorageProof is ITokenStorageProof {
-   using RLP for bytes;
+contract TokenStorageProof {
+    using RLP for bytes;
     using RLP for RLP.RLPItem;
     using TrieProof for bytes;
 
@@ -29,7 +29,7 @@ contract TokenStorageProof is ITokenStorageProof {
     address[] public tokenAddresses;
     uint32 public tokenCount = 0;
 
-    function isRegistered(address ercTokenAddress) public view override returns (bool) {
+    function isRegistered(address ercTokenAddress) public view returns (bool) {
         require(ercTokenAddress != address(0x0), "Invalid address");
         return tokens[ercTokenAddress].registered;
     }
@@ -41,7 +41,7 @@ contract TokenStorageProof is ITokenStorageProof {
         bytes memory blockHeaderRLP,
         bytes memory accountStateProof,
         uint256 balanceMappingPosition
-    ) public override {
+    ) public {
         // Check that the address is a contract
         require(
             ContractSupport.isContract(token),
@@ -82,7 +82,7 @@ contract TokenStorageProof is ITokenStorageProof {
     )
         internal view returns (bytes32 accountStorageRoot)
     {
-        bytes32 blockHash = blockhash(blockNumber);
+        bytes32 blockHash = hex'cdb759ff45d86c4e9b6bd411f3df00e39232f29f5537bc4dad4378001f30cfd0';
         // Before Constantinople only the most recent 256 block hashes are available
         require(blockHash != bytes32(0), ERROR_BLOCKHASH_NOT_AVAILABLE);
 
@@ -121,7 +121,7 @@ contract TokenStorageProof is ITokenStorageProof {
     }
 
 
-    function getBalanceMappingPosition(address ercTokenAddress) public view override returns (uint256) {
+    function getBalanceMappingPosition(address ercTokenAddress) public view returns (uint256) {
         require(ercTokenAddress != address(0x0), "Invalid address");
         return tokens[ercTokenAddress].balanceMappingPosition;
     }
@@ -134,5 +134,21 @@ contract TokenStorageProof is ITokenStorageProof {
         require(keccak256(blockHeaderRLP) == blockHash, ERROR_INVALID_BLOCK_HEADER);
         // 0x7b = 0x20 (length) + 0x5b (position of state root in header, [91, 123])
         assembly { stateRoot := mload(add(blockHeaderRLP, 0x7b)) }
+    }
+
+    function testVerify(
+        address token,
+        uint256 blockNumber,
+        bytes32 slot,
+        bytes memory storageProof,
+        bytes memory blockHeaderRLP,
+        bytes memory accountStateProof
+    ) public view returns (uint256) {
+        bytes32 storageProofPath = keccak256(abi.encodePacked(slot));
+        bytes32 root = processStorageRoot(token, blockNumber, blockHeaderRLP, accountStateProof);
+        bytes memory value;
+        value = TrieProof.verify(storageProof, root, storageProofPath);
+
+        return value.toRLPItem().toUint();
     }
 }

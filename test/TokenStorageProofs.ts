@@ -1,8 +1,7 @@
-import { ERC20Prover } from "@vocdoni/storage-proofs-eth";
 import { BigNumber, Signer, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { ERC20Mock, ERC20Mock__factory, Genesis, Genesis__factory, Namespaces, Namespaces__factory, Processes, Processes__factory, Results, Results__factory, TokenStorageProof, TokenStorageProof__factory } from "../typechain";
-const hre = require("hardhat");
+import { ERC20Prover } from "./storage-proofs-eth";
 
 const BALANCE_MAPPING_SLOT = 4
 
@@ -22,8 +21,18 @@ describe("Token", function () {
   let ethProver: ERC20Prover
 
   before("set up accounts", async function () {
+    // create new account
+    await ethers.provider.send("personal_importRawKey", ["8da4ef21b864d2cc526dbdb2a120bd2874c36c9d0a1fb7f8c63d7f7a8b41de8f", ""])
+    // get signers
     signers = await ethers.getSigners()
-    console.log("signer address: " + await signers[0].getAddress())
+    for (const k in signers) {
+      console.log("Signer " + k + " address: " + await signers[k].getAddress())
+      
+    }
+    // transfer from coinbase to new account
+    const tx = {from: await signers[0].getAddress(), to: await signers[1].getAddress(), value: '0x' + ethers.utils.parseUnits("1", "ether").toString()}
+    const txResult = await ethers.provider.send("personal_sendTransaction", [tx, ""])
+    await ethers.provider.waitForTransaction(txResult, 1)
   })
 
   before("deploy contracts", async function () {
@@ -64,6 +73,17 @@ describe("Token", function () {
     console.log("\n Processes address: " + processes.address)
   });
 
+
+  it('Should register', async() => {
+    const mintTx = await (await erc20Mock.mint(await signers[1].getAddress(), 1000)).wait()
+    const erc20Prover = new ERC20Prover(ethers.provider)
+    console.log(mintTx.blockNumber)
+    const account_proof = await erc20Prover.getProof(erc20Mock.address, [], mintTx.blockNumber, false)
+    //const balanceSlot = await ERC20Prover.getHolderBalanceSlot(await signers[1].getAddress(), 2)
+    //const holder_proof = await erc20Prover.getProof(erc20Mock.address, [balanceSlot], mintBlockNumber, false)
+  })
+  
+  /*
   before("mint ERC20 tokens", async function () {
     await erc20Mock.mint(await signers[0].getAddress(), 1000)
     mintBlockNumber = await ethers.provider.getBlockNumber()
@@ -77,6 +97,7 @@ describe("Token", function () {
     let registered = await tokenStorageProof.registerToken(await signers[0].getAddress(), mintBlockNumber, proof.storageProofsRLP[0], mintProof.blockHeaderRLP, mintProof.accountProofRLP, BALANCE_MAPPING_SLOT)
     console.log(registered)
   })
+  */
 });
 
 

@@ -25,6 +25,7 @@ interface TokenStorageProofInterface extends ethers.utils.Interface {
     "getBalanceSlot(address,uint256)": FunctionFragment;
     "isRegistered(address)": FunctionFragment;
     "registerToken(address,uint256,bytes,bytes,bytes,uint256)": FunctionFragment;
+    "testVerify(address,uint256,bytes32,bytes,bytes,bytes)": FunctionFragment;
     "tokenAddresses(uint256)": FunctionFragment;
     "tokenCount()": FunctionFragment;
     "tokens(address)": FunctionFragment;
@@ -54,6 +55,10 @@ interface TokenStorageProofInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
+    functionFragment: "testVerify",
+    values: [string, BigNumberish, BytesLike, BytesLike, BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "tokenAddresses",
     values: [BigNumberish]
   ): string;
@@ -79,6 +84,7 @@ interface TokenStorageProofInterface extends ethers.utils.Interface {
     functionFragment: "registerToken",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "testVerify", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "tokenAddresses",
     data: BytesLike
@@ -189,6 +195,26 @@ export class TokenStorageProof extends Contract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    testVerify(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    "testVerify(address,uint256,bytes32,bytes,bytes,bytes)"(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     tokenAddresses(
       arg0: BigNumberish,
       overrides?: CallOverrides
@@ -276,6 +302,26 @@ export class TokenStorageProof extends Contract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  testVerify(
+    token: string,
+    blockNumber: BigNumberish,
+    slot: BytesLike,
+    storageProof: BytesLike,
+    blockHeaderRLP: BytesLike,
+    accountStateProof: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  "testVerify(address,uint256,bytes32,bytes,bytes,bytes)"(
+    token: string,
+    blockNumber: BigNumberish,
+    slot: BytesLike,
+    storageProof: BytesLike,
+    blockHeaderRLP: BytesLike,
+    accountStateProof: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   tokenAddresses(
     arg0: BigNumberish,
     overrides?: CallOverrides
@@ -362,6 +408,26 @@ export class TokenStorageProof extends Contract {
       balanceMappingPosition: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    testVerify(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "testVerify(address,uint256,bytes32,bytes,bytes,bytes)"(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     tokenAddresses(
       arg0: BigNumberish,
@@ -458,6 +524,26 @@ export class TokenStorageProof extends Contract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    testVerify(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "testVerify(address,uint256,bytes32,bytes,bytes,bytes)"(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     tokenAddresses(
       arg0: BigNumberish,
       overrides?: CallOverrides
@@ -531,6 +617,26 @@ export class TokenStorageProof extends Contract {
       accountStateProof: BytesLike,
       balanceMappingPosition: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    testVerify(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "testVerify(address,uint256,bytes32,bytes,bytes,bytes)"(
+      token: string,
+      blockNumber: BigNumberish,
+      slot: BytesLike,
+      storageProof: BytesLike,
+      blockHeaderRLP: BytesLike,
+      accountStateProof: BytesLike,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     tokenAddresses(

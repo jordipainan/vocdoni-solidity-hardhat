@@ -3,16 +3,24 @@ import "@typechain/hardhat";
 
 const config = {
   solidity: {
-    version: "0.7.3"
+    version: "0.7.3",
+    settings: {
+      // https://docs.soliditylang.org/en/v0.7.4/using-the-compiler.html#input-description
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
   },
-  defaultNetwork: "hardhat",
-  networks: {
-    hardhat: {},
+  defaultNetwork: "development",
+  networks: {   
     development: {
       url: "http://0.0.0.0:8545",
-      gasPrice: 0,
-      gasLimit: 8000000,
-      network_id: 15,
+      gas: 8000000,
+      network_id: 1337,
+      httpHeaders: {
+        "Content-Type": "application/json"
+      }
     }
   },
   paths: {
