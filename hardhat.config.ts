@@ -1,4 +1,6 @@
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
+import "@typechain/ethers-v5";
 import "@typechain/hardhat";
 
 const config = {
@@ -17,7 +19,7 @@ const config = {
     development: {
       url: "http://0.0.0.0:8545",
       gas: 8000000,
-      network_id: 1337,
+      network_id: 15,
       httpHeaders: {
         "Content-Type": "application/json"
       }

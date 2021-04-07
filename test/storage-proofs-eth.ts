@@ -1,6 +1,8 @@
 import blockHeaderFromRpc from "@ethereumjs/block/dist/header-from-rpc"
 import { rlp } from "ethereumjs-util"
-import { BigNumber, providers, utils } from "ethers"
+import { providers } from "ethers"
+import { ConnectionInfo } from "ethers/lib/utils"
+import { ethers } from "hardhat"
 import { BaseTrie } from "merkle-patricia-tree"
 import { Proof } from "merkle-patricia-tree/dist/baseTrie"
 import { BlockData, StorageProof } from "../node_modules/@vocdoni/storage-proofs-eth/src/types"
@@ -9,20 +11,23 @@ import { BlockData, StorageProof } from "../node_modules/@vocdoni/storage-proofs
 // import { Buffer } from "buffer/"
 
 export class ERC20Prover {
+    provider: providers.JsonRpcProvider
 
-    provider: providers.JsonRpcProvider | providers.Web3Provider | providers.IpcProvider | providers.InfuraProvider
-
-    constructor(provider: providers.JsonRpcProvider | providers.Web3Provider | providers.IpcProvider | providers.InfuraProvider) {
-        let connection = {
-            headers: { "Content-Type": "application/json" }, 
-            url: provider.connection.url,
+    constructor() {
+        let connection: ConnectionInfo = {
+            url: "http://0.0.0.0:8545",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            allowInsecureAuthentication: true
         }
-        this.provider = new providers.JsonRpcProvider(connection);
+        
+        this.provider = new ethers.providers.JsonRpcProvider(connection)
     }
 
     async getProof(address: string, storageKeys: string[] = [], blockNumber: number | string, verify?: boolean) {
-        const proof = await this.fetchStorageProof(address, storageKeys, '0x' + BigNumber.from(blockNumber).toString())
-        const block = await this.fetchBlock('0x' + BigNumber.from(blockNumber).toString())
+        const proof = await this.fetchStorageProof(address, storageKeys, ethers.BigNumber.from(blockNumber).toHexString())
+        const block = await this.fetchBlock(ethers.BigNumber.from(blockNumber).toHexString())
 
         if (verify) {
             await this.verify(block.stateRoot, address, proof)
@@ -43,7 +48,7 @@ export class ERC20Prover {
 
     public static getHolderBalanceSlot(holderAddress: string, balanceMappingSlot: number): string {
         // Equivalent to keccak256(abi.encodePacked(bytes32(holder), balanceMappingPosition));
-        return utils.solidityKeccak256(["bytes32", "uint256"], [utils.hexZeroPad(holderAddress.toLowerCase(), 32), balanceMappingSlot])
+        return ethers.utils.solidityKeccak256(["bytes32", "uint256"], [ethers.utils.hexZeroPad(holderAddress.toLowerCase(), 32), balanceMappingSlot])
     }
 
     public async verify(stateRoot: string, address: string, proof: StorageProof) {
@@ -66,7 +71,7 @@ export class ERC20Prover {
     }
 
     private verifyAccountProof(stateRoot: string, address: string, proof: StorageProof): Promise<boolean> {
-        const path = utils.keccak256(address).slice(2)
+        const path = ethers.utils.keccak256(address).slice(2)
 
         return this.verifyProof(stateRoot, path, proof.accountProof)
             .then(proofAccountRLP => {
@@ -76,7 +81,7 @@ export class ERC20Prover {
     }
 
     private verifyStorageProof(storageRoot: string, storageProof: { key: string, proof: string[], value: string }): Promise<boolean> {
-        const path = utils.solidityKeccak256(["uint256",], [storageProof.key]).slice(2)
+        const path = ethers.utils.solidityKeccak256(["uint256",], [storageProof.key]).slice(2)
 
         return this.verifyProof(storageRoot, path, storageProof.proof)
             .then(proofStorageValue => {
@@ -110,21 +115,15 @@ export class ERC20Prover {
         return rlp.encode([nonce, balance, storageHash, codeHash])
     }
 
-    private fetchStorageProof(address: string, storageKeys: string[], blockNumber: number | string): Promise<StorageProof> {
-        console.log(this.provider)
-        return this.provider.send("eth_getProof", [address, storageKeys, blockNumber])
-            .then((response: StorageProof) => {
-                if (!response) throw new Error("Block not found")
-                return response
-            })
+    private async fetchStorageProof(address: string, storageKeys: string[], blockNumber: number | string): Promise<StorageProof> {
+        //console.log(this.provider)
+        //await this.provider.detectNetwork()
+        console.log(blockNumber)
+        return await this.provider.send("eth_getProof", [address, storageKeys, blockNumber])
     }
 
-    private fetchBlock(blockNumber: number | string): Promise<BlockData> {
-        return this.provider.send("eth_getBlockByNumber", [blockNumber, false])
-            .then((response: BlockData) => {
-                if (!response) throw new Error("Block not found")
-                return response
-            })
+    private async fetchBlock(blockNumber: number | string): Promise<BlockData> {
+        return await this.provider.send("eth_getBlockByNumber", [blockNumber, false])
     }
 
     private getHeaderRLP(rpcBlock: BlockData): string {

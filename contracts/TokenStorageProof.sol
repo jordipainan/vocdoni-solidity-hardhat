@@ -82,7 +82,7 @@ contract TokenStorageProof {
     )
         internal view returns (bytes32 accountStorageRoot)
     {
-        bytes32 blockHash = hex'cdb759ff45d86c4e9b6bd411f3df00e39232f29f5537bc4dad4378001f30cfd0';
+        bytes32 blockHash = blockhash(blockNumber);
         // Before Constantinople only the most recent 256 block hashes are available
         require(blockHash != bytes32(0), ERROR_BLOCKHASH_NOT_AVAILABLE);
 

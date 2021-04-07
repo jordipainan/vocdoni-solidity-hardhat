@@ -61,7 +61,7 @@ describe("Token", function () {
       results.address,
       tokenStorageProof.address,
       ethers.BigNumber.from(ethers.provider.network.chainId),
-      ethers.BigNumber.from(1)
+      ethers.BigNumber.from(0)
     )
     await processes.deployed()
 
@@ -76,11 +76,24 @@ describe("Token", function () {
 
   it('Should register', async() => {
     const mintTx = await (await erc20Mock.mint(await signers[1].getAddress(), 1000)).wait()
-    const erc20Prover = new ERC20Prover(ethers.provider)
+    const erc20Prover = new ERC20Prover()
     console.log(mintTx.blockNumber)
     const account_proof = await erc20Prover.getProof(erc20Mock.address, [], mintTx.blockNumber, false)
-    //const balanceSlot = await ERC20Prover.getHolderBalanceSlot(await signers[1].getAddress(), 2)
-    //const holder_proof = await erc20Prover.getProof(erc20Mock.address, [balanceSlot], mintBlockNumber, false)
+    const balanceSlot = await tokenStorageProof["getBalanceSlot(address,uint256)"](await signers[1].getAddress(), BALANCE_MAPPING_SLOT)
+    const holder_proof = await erc20Prover.getProof(erc20Mock.address, [balanceSlot], mintTx.blockNumber, false)
+    console.log(account_proof)
+    console.log(balanceSlot)
+    console.log(holder_proof)
+    const t2 = tokenStorageProof.connect(signers[1])
+    let unlokedAccount = await ethers.provider.send("personal_unlockAccount", [await signers[1].getAddress(), ""])
+    console.log(unlokedAccount)
+    let registered = await (await t2["registerToken(address,uint256,bytes,bytes,bytes,uint256)"](erc20Mock.address, mintTx.blockNumber, holder_proof.storageProofsRLP[0], account_proof.blockHeaderRLP, account_proof.accountProofRLP, BALANCE_MAPPING_SLOT)).wait()
+    //let registered = await tokenStorageProof.registerToken()
+    console.log(registered)
+    const isRegistered = await tokenStorageProof["isRegistered(address)"](erc20Mock.address)
+    if (!isRegistered) {
+      throw new Error("FCK!")
+    }
   })
   
   /*
