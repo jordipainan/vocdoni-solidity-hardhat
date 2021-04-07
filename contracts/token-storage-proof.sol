@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.1;
 
-import "./RLP.sol";
 import "./lib.sol";
-import "./common.sol";
 import "./IERC20.sol";
 
-contract TokenStorageProof is ITokenStorageProof {
-   using RLP for bytes;
+contract TokenStorageProof {
+    using RLP for bytes;
     using RLP for RLP.RLPItem;
     using TrieProof for bytes;
 
@@ -16,6 +14,10 @@ contract TokenStorageProof is ITokenStorageProof {
     string private constant ERROR_BLOCKHASH_NOT_AVAILABLE = "BLOCKHASH_NOT_AVAILABLE";
     string private constant ERROR_INVALID_BLOCK_HEADER = "INVALID_BLOCK_HEADER";
     string private constant ERROR_UNPROCESSED_STORAGE_ROOT = "UNPROCESSED_STORAGE_ROOT";
+    string private constant ERROR_NOT_A_CONTRACT = "NOT_A_CONTRACT";
+    string private constant ERROR_NOT_ENOUGH_FUNDS = "NOT_ENOUGH_FUNDS";
+    string private constant ERROR_ALREADY_REGISTERED = "ALREADY_REGISTERED";
+     string private constant ERROR_INVALID_ADDRESS = "INVALID_ADDRESS";
 
     event TokenRegistered(address indexed token, address indexed registrar);
 
@@ -29,8 +31,8 @@ contract TokenStorageProof is ITokenStorageProof {
     address[] public tokenAddresses;
     uint32 public tokenCount = 0;
 
-    function isRegistered(address ercTokenAddress) public view override returns (bool) {
-        require(ercTokenAddress != address(0x0), "Invalid address");
+    function isRegistered(address ercTokenAddress) public view returns (bool) {
+        require(ercTokenAddress != address(0x0), ERROR_INVALID_ADDRESS);
         return tokens[ercTokenAddress].registered;
     }
 
@@ -41,19 +43,19 @@ contract TokenStorageProof is ITokenStorageProof {
         bytes memory blockHeaderRLP,
         bytes memory accountStateProof,
         uint256 balanceMappingPosition
-    ) public override {
+    ) public {
         // Check that the address is a contract
         require(
             ContractSupport.isContract(token),
-            "The address must be a contract"
+            ERROR_NOT_A_CONTRACT
         );
         // check token is not registered
-        require(!isRegistered(token), "Token already registered");
+        require(!isRegistered(token), ERROR_ALREADY_REGISTERED);
 
         // check msg.sender balance calling 'balanceOf' function on the ERC20 contract
         IERC20 tokenContract = IERC20(token);
         uint256 balance = tokenContract.balanceOf(msg.sender);
-        require(balance > 0, "Insufficient funds");
+        require(balance > 0, ERROR_NOT_ENOUGH_FUNDS);
 
         bytes32 root = processStorageRoot(token, blockNumber, blockHeaderRLP, accountStateProof);
 
@@ -63,7 +65,7 @@ contract TokenStorageProof is ITokenStorageProof {
             root,
             balanceMappingPosition
         );
-        require(balanceFromTrie > 0, "Insufficient funds");
+        require(balanceFromTrie > 0, ERROR_NOT_ENOUGH_FUNDS);
 
         ERC20Token storage newToken = tokens[token];
         newToken.registered = true;
@@ -121,8 +123,8 @@ contract TokenStorageProof is ITokenStorageProof {
     }
 
 
-    function getBalanceMappingPosition(address ercTokenAddress) public view override returns (uint256) {
-        require(ercTokenAddress != address(0x0), "Invalid address");
+    function getBalanceMappingPosition(address ercTokenAddress) public view returns (uint256) {
+        require(ercTokenAddress != address(0x0), ERROR_INVALID_ADDRESS);
         return tokens[ercTokenAddress].balanceMappingPosition;
     }
 
@@ -134,5 +136,21 @@ contract TokenStorageProof is ITokenStorageProof {
         require(keccak256(blockHeaderRLP) == blockHash, ERROR_INVALID_BLOCK_HEADER);
         // 0x7b = 0x20 (length) + 0x5b (position of state root in header, [91, 123])
         assembly { stateRoot := mload(add(blockHeaderRLP, 0x7b)) }
+    }
+
+    function testVerify(
+        address token,
+        uint256 blockNumber,
+        bytes32 slot,
+        bytes memory storageProof,
+        bytes memory blockHeaderRLP,
+        bytes memory accountStateProof
+    ) public view returns (uint256) {
+        bytes32 storageProofPath = keccak256(abi.encodePacked(slot));
+        bytes32 root = processStorageRoot(token, blockNumber, blockHeaderRLP, accountStateProof);
+        bytes memory value;
+        value = TrieProof.verify(storageProof, root, storageProofPath);
+
+        return value.toRLPItem().toUint();
     }
 }

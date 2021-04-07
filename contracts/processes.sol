@@ -6,7 +6,7 @@ pragma experimental ABIEncoderV2;
 import "./base.sol"; // Base contracts (Chained, Owned)
 import "./common.sol"; // Common interface for retro compatibility
 import "./lib.sol"; // Helpers
-import "./ERC20Mock.sol";
+import "./test/ERC20Mock.sol";
 
 contract Processes is IProcessStore, Chained {
     using SafeUint8 for uint8;

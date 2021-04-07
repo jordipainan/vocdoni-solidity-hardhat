@@ -1,17 +1,24 @@
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
+import "@typechain/ethers-v5";
 import "@typechain/hardhat";
 
 const config = {
   solidity: {
-    version: "0.7.3"
+    version: "0.7.3",
+    settings: {
+      // https://docs.soliditylang.org/en/v0.7.4/using-the-compiler.html#input-description
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
   },
-  defaultNetwork: "hardhat",
-  networks: {
-    hardhat: {},
+  defaultNetwork: "development",
+  networks: {   
     development: {
-      url: "http://0.0.0.0:8545",
-      gasPrice: 0,
-      gasLimit: 8000000,
+      url: "http://127.0.0.1:8545",
+      gas: 8000000,
       network_id: 15,
     }
   },
