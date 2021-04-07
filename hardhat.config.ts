@@ -17,12 +17,9 @@ const config = {
   defaultNetwork: "development",
   networks: {   
     development: {
-      url: "http://0.0.0.0:8545",
+      url: "http://127.0.0.1:8545",
       gas: 8000000,
       network_id: 15,
-      httpHeaders: {
-        "Content-Type": "application/json"
-      }
     }
   },
   paths: {
